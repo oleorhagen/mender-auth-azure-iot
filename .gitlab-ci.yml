@@ -13,3 +13,75 @@ include:
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-python3-format.yml'
 
+
+
+test:acceptance:
+  stage: test
+  image: docker:19.03-dind
+  variables:
+    DOCKER_CLIENT_TIMEOUT: 300
+    COMPOSE_HTTP_TIMEOUT: 300
+  tags:
+    - mender-qa-slave-highcpu
+  before_script:
+    - unset DOCKER_HOST
+    - unset DOCKER_TLS_VERIFY
+    - unset DOCKER_CERT_PATH
+    # Install integration tests framework dependencies
+    - apk add bash git python3 python3-dev py-pip
+    - pip3 install -r tests/acceptance/requirements.txt
+    - pip3 install -e .
+    # Start dockerd in the background
+    - /usr/local/bin/dockerd &
+    # Wait for dockerd to start
+    - |-
+      MAX_WAIT=30
+      while [ ! -e "/var/run/docker.sock" ] && [ $MAX_WAIT -gt 0 ]; do
+        MAX_WAIT=$(($MAX_WAIT - 1))
+        sleep 1
+      done
+    - docker version # Verify that the docker server is up and running
+  script:
+    - pytest --junit-xml=report.xml --cov=src/daemon tests/acceptance/ && coveralls
+  artifacts:
+    when: always
+    reports:
+        junit: report.xml
+
+.test:
+  needs: []
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+        - ~/.cache/pip-test/
+
+test:static:
+  extends: .test
+  stage: test
+  image: python:3.9-buster
+  before_script:
+    - pip install --cache-dir=~/.cache/pip-test -r requirements_static_tools.txt
+    - pip install --cache-dir=~/.cache/pip-test .
+    - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
+  script:
+    - isort --check-only --line-length 88 --wrap-length 88 src
+    - isort --check-only --line-length 88 --wrap-length 88 tests/unit/test_*.py
+    - mypy src
+    - pylint --rcfile=.pylintrc-develop src
+    - pylint --rcfile=.pylintrc-develop --disable=no-self-use --disable=no-member --disable=too-many-ancestors --disable=protected-access --disable=too-many-statements --disable=too-many-arguments tests/unit/test_*.py
+
+test:unit:
+  extends: .test
+  stage: test
+  image: python:3.9-buster
+  variables:
+    BRANCH_NAME: "${CI_COMMIT_REF_SLUG}"
+  before_script:
+    - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
+    - pip install --cache-dir=~/.cache/pip-test -e .
+  script:
+    - pytest --junit-xml=report.xml --cov=src/daemon tests/unit && coveralls
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml

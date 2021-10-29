@@ -43,7 +43,7 @@ setuptools.setup(
     ],
     keywords=["mender", "OTA", "authorization-daemon"],
     packages=setuptools.find_packages(where="src"),
-    install_requires=[],
+    install_requires=["azure-iot-device"],
     entry_points={
         "console_scripts": ["mender-auth-azure-iot-client=daemon.daemon:main"]
     },
