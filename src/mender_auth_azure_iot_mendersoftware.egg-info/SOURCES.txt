@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+src/mender_auth_azure_iot_mendersoftware.egg-info/PKG-INFO
+src/mender_auth_azure_iot_mendersoftware.egg-info/SOURCES.txt
+src/mender_auth_azure_iot_mendersoftware.egg-info/dependency_links.txt
+src/mender_auth_azure_iot_mendersoftware.egg-info/entry_points.txt
+src/mender_auth_azure_iot_mendersoftware.egg-info/not-zip-safe
+src/mender_auth_azure_iot_mendersoftware.egg-info/top_level.txt
