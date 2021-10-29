@@ -1,0 +1,3 @@
+[console_scripts]
+mender-auth-azure-iot-client = daemon.daemon:main
+
