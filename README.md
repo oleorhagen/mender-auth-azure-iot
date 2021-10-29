@@ -9,8 +9,8 @@ devices. Mender comprises a client running at the embedded device, as well as
 a server that manages deployments across many devices.
 
 This repository contains the mender-auth-azure-iot daemon. It enhances the
-[Mender client](https://github.com/mendersoftware/mender), and compliments the
-Mender client through allowing it to interface with Azure IoT.
+[Mender client](https://github.com/mendersoftware/mender), through allowing it
+to interface with Azure IoT.
 
 ![Mender logo](mender_logo.png)
 
