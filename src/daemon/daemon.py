@@ -54,8 +54,13 @@ def get_message(device_client):
 def run_daemon(args):
     global JWT_TOKEN
     global CACHED_TWIN_DATA
-    connection_string = config.load("/home/olepor/azure.json").ConnectionString
-    device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+    connection_string = config.load("azure.json").ConnectionString
+    ca_cert = "tests/acceptance/broker/server.crt"
+    certfile = open(ca_cert)
+    root_ca_cert = certfile.read()
+    device_client = IoTHubDeviceClient.create_from_connection_string(
+        connection_string, server_verification_cert=root_ca_cert
+    )
     device_identity = identity.aggregate("/home/olepor/testaggregation")
     log.info(f"Device ID: {device_identity}")
     device_client.connect()
