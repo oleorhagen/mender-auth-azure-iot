@@ -21,119 +21,112 @@ import re
 from paho.mqtt import client as mqtt_client
 
 
-broker = "localhost"
-port = 1883
-topic = "$iothub/twin/PATCH/#"
-# generate client ID with pub prefix randomly
-client_id = f"python-mqtt-{random.randint(0, 1000)}"
-# username = 'emqx'
-# password = 'public'
+class MQTTServer:
+
+    broker = "localhost"
+    port = 1883
+
+    client_workers = []
+
+    def __init__(self):
+        pass
+
+    def connect(self):
+        def on_connect(client, userdata, flags, rc):
+            if rc == 0:
+                print("Connected to MQTT Broker!")
+            else:
+                print("Failed to connect, return code %d\n", rc)
+
+        client_id = f"python-mqtt-server-client-{random.randint(0, 1000)}"
+        client = mqtt_client.Client(client_id)
+        client.on_connect = on_connect
+        client.connect(self.broker, self.port)
+        self.client_workers.append(client)
+        return client
 
 
-def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
+    def reply_to_twin_patch(self):
+        # 1. A device must first subscribe to the $iothub/twin/res/# topic to receive the operation's responses from IoT Hub.
+        #
+        # 2. A device sends a message that contains the device twin update to the $iothub/twin/PATCH/properties/reported/?$rid={request id} topic. This message includes a request ID value.
+        #
+        # 3. The service then sends a response message that contains the new ETag value for the reported properties collection on topic $iothub/twin/res/{status}/?$rid={request id}. This response message uses the same request ID as the request.
+        #
 
-    client = mqtt_client.Client(client_id)
-    # client.username_pw_set(username, password)
-    client.on_connect = on_connect
-    client.connect(broker, port)
-    return client
+        client = self.connect()
+        client.loop_start()
 
+        def on_device_twin_update(client, userdata, msg):
+            print("Received an update to the device twin")
+            print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+            # 2. Reply to the device with the status (204) for now
+            status = 204
+            m = re.search(r".*rid=(.*)", msg.topic)
+            rid = m.group(1)
+            client.publish(f"$iothub/twin/res/{status}/?$rid={rid}")
 
-def publish(client):
-    msg_count = 0
-    while True:
-        time.sleep(1)
-        msg = f"messages: {msg_count}"
-        result = client.publish(topic, msg)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Send `{msg}` to topic `{topic}`")
-        else:
-            print(f"Failed to send message to topic {topic}")
-        msg_count += 1
+        topic = "$iothub/twin/PATCH/#"
+        client.subscribe(topic)
+        print(f"Subscribed to {topic}")
+        client.on_message = on_device_twin_update
 
 
-def subscribe(client: mqtt_client):
-    def on_message(client, userdata, msg):
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+    def update_desired_device_twin(self):
+        # 1. Subscribe to $iothub/twin/GET/?$rid={request_id} from the device
+        #
+        # 2. Respond with the device twin data on $iothub/twin/res/{status}/?$rid={request_id}
+        #
 
-    client.subscribe(topic)
-    client.on_message = on_message
+        client = self.connect()
+        client.loop_start()
 
+        def send_desired_device_twin(client, userdata, msg):
+            # Extract the request_id from the msg
+            m = re.search(r".*rid=(.*)", msg.topic)
+            rid = m.group(1)
+            status = 200
+            response_topic = f"$iothub/twin/res/{status}/?$rid={rid}"
+            device_twin = {
+                "desired": {"telemetrySendFrequency": "5m", "$version": 12},
+                "reported": {
+                    "telemetrySendFrequency": "5m",
+                    "batteryLevel": 55,
+                    "$version": 123,
+                },
+            }
+            import json
 
-def reply_to_twin_patch(client: mqtt_client):
-    # 1. A device must first subscribe to the $iothub/twin/res/# topic to receive the operation's responses from IoT Hub.
-    #
-    # 2. A device sends a message that contains the device twin update to the $iothub/twin/PATCH/properties/reported/?$rid={request id} topic. This message includes a request ID value.
-    #
-    # 3. The service then sends a response message that contains the new ETag value for the reported properties collection on topic $iothub/twin/res/{status}/?$rid={request id}. This response message uses the same request ID as the request.
-    #
+            data = json.dumps(device_twin)
+            print(f"Sending the device twin:\n{data}")
+            client.publish(response_topic, data)
 
-    def on_device_twin_update(client, userdata, msg):
-        print("in_device_twin_update...")
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-        # 2. Reply to the device with the status (204) for now
-        status = 204
-        m = re.search(r".*rid=(.*)", msg.topic)
-        rid = m.group(1)
-        client.publish(f"$iothub/twin/res/{status}/?$rid={rid}")
-
-    topic = "$iothub/twin/PATCH/#"
-    print(f"Subscribing to {topic}")
-    client.subscribe(topic)
-    client.on_message = on_device_twin_update
-    #
-
-    # result = client.publish(topic, msg)
-
-
-def update_desired_device_twin(client: mqtt_client):
-    # 1. Subscribe to $iothub/twin/GET/?$rid={request_id} from the device
-    #
-    # 2. Respond with the device twin data on $iothub/twin/res/{status}/?$rid={request_id}
-    #
-    def send_desired_device_twin(client, userdata, msg):
-        print("Sending the device twin...")
-        # Extract the request_id from the msg
-        m = re.search(r".*rid=(.*)", msg.topic)
-        rid = m.group(1)
-        status = 200
-        response_topic = f"$iothub/twin/res/{status}/?$rid={rid}"
-        device_twin = {
-            "desired": {"telemetrySendFrequency": "5m", "$version": 12},
-            "reported": {
-                "telemetrySendFrequency": "5m",
-                "batteryLevel": 55,
-                "$version": 123,
-            },
-        }
-        import json
-        data=json.dumps(device_twin)
-        client.publish(response_topic, data)
-
-    print("Listening to GET requests from the client...")
-    listen_topic = "$iothub/twin/GET/#"
-    client.subscribe(listen_topic)
-    client.on_message = send_desired_device_twin
+        print("Listening to GET requests from the client...")
+        listen_topic = "$iothub/twin/GET/#"
+        client.subscribe(listen_topic)
+        print(f"Subscribed to {listen_topic}")
+        client.on_message = send_desired_device_twin
 
 
-def run():
-    client = connect_mqtt()
-    client.loop_start()
-    # subscribe(client)
-    # publish(client)
-    # reply_to_twin_patch(client)
+    def spin(self):
 
-    update_desired_device_twin(client)
-    while True:
-        time.sleep(5)
+        # Handle patches to the device_twin
+        self.reply_to_twin_patch()
+
+        # Send the device_twin upon GET requests
+        self.update_desired_device_twin()
+
+        # while True:
+        #     # TODO - use proper client (paho) sleep semantics here...
+        #     time.sleep(5)
+        return self
+
+    def teardown(self):
+        for worker in self.client_workers:
+            print(f"Worker: {worker}")
+            # worker.on_disconnect = lambda a,b,c: print(f"Disconnected worker {worker} from the broker")
+            worker.disconnect()
 
 
 if __name__ == "__main__":
-    run()
+    MQTTServer().spin()

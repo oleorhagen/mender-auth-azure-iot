@@ -12,68 +12,53 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# import pytest
-# import docker
-
-
-# @pytest.fixture
-# def spinup_mqtt_broker():
-#     client = docker.from_env()
-#     mqtt_broker = client.containers.run(
-#         "eclipse-mosquitto",
-#         [
-#             # "-p",
-#             # "1883:1883",
-#             # "-v",
-#             # "mosquitto.conf:/mosquitto/config/mosquitto.conf",
-#         ],
-#         ports={1883: 1883},
-#         volumes=["mosquitto.conf:/mosquitto/config/"],
-#         detach=True,
-#     )
-#     yield mqtt_broker
-#     # TODO - run as a teardown method
-#     mqtt_broker.stop()
+import docker
+from docker.types import Mount
 import pytest
-import functools
 import time
-import e2e_settings
 import logging
-from utils import create_client_object
-from service_helper_sync import ServiceHelperSync
-from azure.iot.device.iothub import IoTHubDeviceClient, IoTHubModuleClient
+
+from server import MQTTServer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 
 
-@pytest.fixture(scope="function")
-def brand_new_client(
-    device_identity, client_kwargs, service_helper, device_id, module_id
-):
-    service_helper.set_identity(device_id, module_id)
-
-    client = create_client_object(
-        device_identity, client_kwargs, IoTHubDeviceClient, IoTHubModuleClient
+@pytest.fixture
+def spinup_mqtt_broker():
+    # TODO - also spin up the test server
+    client = docker.from_env()
+    mqtt_broker = client.containers.run(
+        "eclipse-mosquitto",
+        [
+            # "-p",
+            # "1883:1883",
+            # "-v",
+            # "mosquitto.conf:/mosquitto/config/mosquitto.conf",
+        ],
+        ports={1883: 1883, 8883: 8883,},
+        # volumes=["mosquitto.conf:/mosquitto/config/", "broker:/etc/ssl/certs/broker"],
+        mounts=[
+            Mount(
+                source="/home/olepor/mendersoftware/mender-auth-azure-iot/tests/acceptance/testdata",
+                target="/mosquitto/config/",
+                type="bind",
+            ),
+            Mount(
+                source="/home/olepor/mendersoftware/mender-auth-azure-iot/tests/acceptance/broker/",
+                target="/etc/ssl/certs/broker/",
+                type="bind",
+            ),
+        ],
+        detach=True,
     )
-
-    yield client
-
-    client.shutdown()
-
-
-@pytest.fixture(scope="function")
-def client(brand_new_client):
-    client = brand_new_client
-
-    client.connect()
-
-    yield client
+    yield mqtt_broker
+    # TODO - run as a teardown method
+    mqtt_broker.stop()
 
 
-@pytest.fixture(scope="module")
-def service_helper():
-    service_helper = ServiceHelperSync()
-    time.sleep(3)
-    yield service_helper
-    service_helper.shutdown()
+@pytest.fixture
+def spinup_mqtt_iot_hub_mock_server():
+    server = MQTTServer().spin()
+    yield server
+    server.teardown()

@@ -18,6 +18,7 @@ import time
 import random
 import os
 import asyncio
+import sys
 
 from azure.iot.device import IoTHubDeviceClient
 
@@ -73,8 +74,8 @@ def run_daemon(args):
         # log.info(f"Cached data: {CACHED_TWIN_DATA}")
         # if CACHED_TWIN_DATA != twin:
         #     CACHED_TWIN_DATA = twin
-        # log.info("Sending twin report...")
-        # send_message(device_client, device_identity)
+        log.info("Sending twin report...")
+        send_message(device_client, device_identity)
         # TODO - get once an hour
         time.sleep(DEVICE_UPDATE_INTERVAL)
 
@@ -156,4 +157,4 @@ def main(testargs=None):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
