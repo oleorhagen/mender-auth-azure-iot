@@ -1,19 +1,19 @@
 [![Build Status](https://gitlab.com/Northern.tech/Mender/mender-auth-azure-iot/badges/master/pipeline.svg)](https://gitlab.com/Northern.tech/Mender/mender-auth-azure-iot/pipelines)
 [![Coverage Status](https://coveralls.io/repos/github/mendersoftware/mender-auth-azure-iot/badge.svg?branch=master)](https://coveralls.io/github/mendersoftware/mender-auth-azure-iot?branch=master)
 
-mender-auth-azure-iot: a standalone authentication daemon for interfacing Mender with Azure IoT
+mender-auth-azure-iot: a standalone authentication daemon for interfacing Mender
+with Azure IoT
 ==============================================
 
 Mender is an open source over-the-air (OTA) software updater for embedded Linux
-devices. Mender comprises a client running at the embedded device, as well as
-a server that manages deployments across many devices.
+devices. Mender comprises a client running at the embedded device, as well as a
+server that manages deployments across many devices.
 
 This repository contains the mender-auth-azure-iot daemon. It enhances the
 [Mender client](https://github.com/mendersoftware/mender), through allowing it
 to interface with Azure IoT.
 
 ![Mender logo](https://mender.io/user/pages/04.resources/logos/logoS.png)
-
 
 ## Getting started
 
@@ -22,7 +22,8 @@ section in [the Mender documentation](https://docs.mender.io/).
 
 ## Contributing
 
-We welcome and ask for your contribution. If you would like to contribute to Mender, please read our guide on how to best get started [contributing code or
+We welcome and ask for your contribution. If you would like to contribute to
+Mender, please read our guide on how to best get started [contributing code or
 documentation](https://github.com/mendersoftware/mender/blob/master/CONTRIBUTING.md).
 
 ## License
@@ -40,10 +41,12 @@ issue. We thank you in advance for your cooperation.
 
 ## Authors
 
-Mender was created by the team at [Northern.tech AS](https://northern.tech), with many contributions from
-the community. Thanks [everyone](https://github.com/mendersoftware/mender/graphs/contributors)!
+Mender was created by the team at [Northern.tech AS](https://northern.tech),
+with many contributions from the community. Thanks
+[everyone](https://github.com/mendersoftware/mender/graphs/contributors)!
 
-[Mender](https://mender.io) is sponsored by [Northern.tech AS](https://northern.tech).
+[Mender](https://mender.io) is sponsored by [Northern.tech
+AS](https://northern.tech).
 
 ## Connect with us
 
