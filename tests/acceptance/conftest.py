@@ -26,18 +26,10 @@ logger.setLevel(level=logging.INFO)
 
 @pytest.fixture
 def spinup_mqtt_broker():
-    # TODO - also spin up the test server
     client = docker.from_env()
     mqtt_broker = client.containers.run(
         "eclipse-mosquitto",
-        [
-            # "-p",
-            # "1883:1883",
-            # "-v",
-            # "mosquitto.conf:/mosquitto/config/mosquitto.conf",
-        ],
         ports={1883: 1883, 8883: 8883,},
-        # volumes=["mosquitto.conf:/mosquitto/config/", "broker:/etc/ssl/certs/broker"],
         mounts=[
             Mount(
                 source="/home/olepor/mendersoftware/mender-auth-azure-iot/tests/acceptance/testdata",
@@ -59,6 +51,5 @@ def spinup_mqtt_broker():
 
 @pytest.fixture
 def spinup_mqtt_iot_hub_mock_server():
-    server = MQTTServer().spin()
-    yield server
-    server.teardown()
+    server = MQTTServer()
+    return server

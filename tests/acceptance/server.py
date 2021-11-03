@@ -15,6 +15,8 @@
 
 import random
 import time
+import pytest
+import json
 
 import re
 
@@ -27,6 +29,8 @@ class MQTTServer:
     port = 1883
 
     client_workers = []
+
+    received_twins = []
 
     def __init__(self):
         pass
@@ -45,14 +49,23 @@ class MQTTServer:
         self.client_workers.append(client)
         return client
 
+    def expected(self, uploads, replies):
+        self.uploads = uploads
+        self.replies = replies
 
     def reply_to_twin_patch(self):
-        # 1. A device must first subscribe to the $iothub/twin/res/# topic to receive the operation's responses from IoT Hub.
-        #
-        # 2. A device sends a message that contains the device twin update to the $iothub/twin/PATCH/properties/reported/?$rid={request id} topic. This message includes a request ID value.
-        #
-        # 3. The service then sends a response message that contains the new ETag value for the reported properties collection on topic $iothub/twin/res/{status}/?$rid={request id}. This response message uses the same request ID as the request.
-        #
+        """1. A device must first subscribe to the $iothub/twin/res/# topic to receive
+         the operation's responses from IoT Hub.
+
+         2. A device sends a message that contains the device twin update to
+         the $iothub/twin/PATCH/properties/reported/?$rid={request id} topic.
+         This message includes a request ID value.
+
+         3. The service then sends a response message that contains the new
+         ETag value for the reported properties collection on topic
+         $iothub/twin/res/{status}/?$rid={request id}. This response message
+         uses the same request ID as the request.
+        """
 
         client = self.connect()
         client.loop_start()
@@ -60,6 +73,8 @@ class MQTTServer:
         def on_device_twin_update(client, userdata, msg):
             print("Received an update to the device twin")
             print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+            device_twin = json.loads(msg.payload.decode())
+            self.received_twins.append(device_twin)
             # 2. Reply to the device with the status (204) for now
             status = 204
             m = re.search(r".*rid=(.*)", msg.topic)
@@ -71,12 +86,13 @@ class MQTTServer:
         print(f"Subscribed to {topic}")
         client.on_message = on_device_twin_update
 
-
     def update_desired_device_twin(self):
-        # 1. Subscribe to $iothub/twin/GET/?$rid={request_id} from the device
-        #
-        # 2. Respond with the device twin data on $iothub/twin/res/{status}/?$rid={request_id}
-        #
+        """1. Subscribe to $iothub/twin/GET/?$rid={request_id} from the device
+
+         2. Respond with the device twin data on
+         $iothub/twin/res/{status}/?$rid={request_id}
+
+        """
 
         client = self.connect()
         client.loop_start()
@@ -87,16 +103,7 @@ class MQTTServer:
             rid = m.group(1)
             status = 200
             response_topic = f"$iothub/twin/res/{status}/?$rid={rid}"
-            device_twin = {
-                "desired": {"telemetrySendFrequency": "5m", "$version": 12},
-                "reported": {
-                    "telemetrySendFrequency": "5m",
-                    "batteryLevel": 55,
-                    "$version": 123,
-                },
-            }
-            import json
-
+            device_twin = self.replies
             data = json.dumps(device_twin)
             print(f"Sending the device twin:\n{data}")
             client.publish(response_topic, data)
@@ -107,7 +114,6 @@ class MQTTServer:
         print(f"Subscribed to {listen_topic}")
         client.on_message = send_desired_device_twin
 
-
     def spin(self):
 
         # Handle patches to the device_twin
@@ -116,15 +122,11 @@ class MQTTServer:
         # Send the device_twin upon GET requests
         self.update_desired_device_twin()
 
-        # while True:
-        #     # TODO - use proper client (paho) sleep semantics here...
-        #     time.sleep(5)
         return self
 
     def teardown(self):
         for worker in self.client_workers:
-            print(f"Worker: {worker}")
-            # worker.on_disconnect = lambda a,b,c: print(f"Disconnected worker {worker} from the broker")
+            worker.on_disconnect = lambda a,b,c: print(f"Disconnected worker {worker} from the broker")
             worker.disconnect()
 
 

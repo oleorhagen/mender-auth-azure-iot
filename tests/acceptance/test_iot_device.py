@@ -17,13 +17,40 @@ import threading
 
 from daemon import daemon
 
+
 def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
-    print("Testing the daemon...")
-    with pytest.raises(SystemExit):
-        daemon.main([""])
-    print("Running the daemon")
-    print(f"Server: {spinup_mqtt_iot_hub_mock_server}")
-    threading.Thread(target=daemon.run_daemon, args=[""], daemon=True).start()
-    print("Started the daemon")
+    server = spinup_mqtt_iot_hub_mock_server
+    server.expected(
+        uploads={"device_id": {"foo": ["bar"]}},
+        replies={"desired": {"JWT": "FOOBARBAZ"}, "reported": {},},
+    )
     import time
+
+    # TODO - Should possibly be replaced with a healthcheck
+    time.sleep(3)
+    server.spin()
+    # TODO - Same for the server
+    time.sleep(3)
+
+    class Stop:
+        def __init__(self):
+            self.stop = False
+
+        def now(self):
+            self.stop = True
+
+    stop  = Stop()
+
+    # Quick for tests
+    daemon.DEVICE_UPDATE_INTERVAL = 5
+    threading.Thread(target=daemon.run_daemon, args=(stop,), daemon=True).start()
     time.sleep(10)
+    assert len(server.received_twins) >= 1
+    assert server.received_twins[0] == {
+        "device_id": {"foo": ["bar"]},
+    }
+    assert daemon.JWT_TOKEN == "FOOBARBAZ"
+
+    stop.now()
+    time.sleep(10)
+    server.teardown()

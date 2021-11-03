@@ -27,20 +27,15 @@ import daemon.config as config
 
 log = logging.getLogger()
 
-DEVICE_UPDATE_INTERVAL = 10
+DEVICE_UPDATE_INTERVAL = 60*60
 JWT_TOKEN = ""
-CACHED_TWIN_DATA = {}
 
 
 def send_message(device_client, device_identity):
     # send new reported properties
     reported_properties = {
-        "temperature": random.randint(320, 800) / 10,
         "device_id": device_identity,
     }
-    log.info(
-        "Setting reported temperature to {}".format(reported_properties["temperature"])
-    )
     device_client.patch_twin_reported_properties(reported_properties)
 
 
@@ -52,9 +47,8 @@ def get_message(device_client):
     return twin
 
 
-def run_daemon(args):
+def run_daemon(stop):
     global JWT_TOKEN
-    global CACHED_TWIN_DATA
     connection_string = config.load("azure.json").ConnectionString
     ca_cert = "tests/acceptance/broker/server.crt"
     certfile = open(ca_cert)
@@ -65,18 +59,20 @@ def run_daemon(args):
     device_identity = identity.aggregate("/home/olepor/testaggregation")
     log.info(f"Device ID: {device_identity}")
     device_client.connect()
-    print("Connected to the IoT Hub")
+    log.info("Connected to the IoT Hub")
     while True:
         log.info("Getting twin...")
         twin = get_message(device_client)
-        log.info(f"JWT {JWT_TOKEN}")
-        JWT_TOKEN = twin.get("JWT", "")
-        # log.info(f"Cached data: {CACHED_TWIN_DATA}")
-        # if CACHED_TWIN_DATA != twin:
-        #     CACHED_TWIN_DATA = twin
+        desired = twin.get("desired", None)
+        if not desired:
+            log.error("desired data not present in the response")
+            return
+        JWT_TOKEN = desired.get("JWT", "")
         log.info("Sending twin report...")
-        send_message(device_client, device_identity)
-        # TODO - get once an hour
+        if twin.get("device_id", "") != device_identity:
+            send_message(device_client, device_identity)
+        if stop.stop:
+            return
         time.sleep(DEVICE_UPDATE_INTERVAL)
 
 
