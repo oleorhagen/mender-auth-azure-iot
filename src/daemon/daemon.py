@@ -66,13 +66,15 @@ def run_daemon(args):
     device_client.connect()
     print("Connected to the IoT Hub")
     while True:
+        log.info("Getting twin...")
         twin = get_message(device_client)
         log.info(f"JWT {JWT_TOKEN}")
         JWT_TOKEN = twin.get("JWT", "")
         # log.info(f"Cached data: {CACHED_TWIN_DATA}")
         # if CACHED_TWIN_DATA != twin:
         #     CACHED_TWIN_DATA = twin
-        send_message(device_client, device_identity)
+        # log.info("Sending twin report...")
+        # send_message(device_client, device_identity)
         # TODO - get once an hour
         time.sleep(DEVICE_UPDATE_INTERVAL)
 
