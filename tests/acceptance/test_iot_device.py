@@ -23,8 +23,7 @@ def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
         daemon.main([""])
     print("Running the daemon")
     print(f"Server: {spinup_mqtt_iot_hub_mock_server}")
-    threading.Thread(target=daemon.run_daemon, args=[""]).start()
+    threading.Thread(target=daemon.run_daemon, args=[""], daemon=True).start()
     print("Started the daemon")
     import time
-    time.sleep(100)
-    pytest.failnow("Foobar")
+    time.sleep(10)
