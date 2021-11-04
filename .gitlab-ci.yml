@@ -83,19 +83,18 @@ test:static:
     - pylint --rcfile=.pylintrc-develop src
     - pylint --rcfile=.pylintrc-develop --disable=no-self-use --disable=no-member --disable=too-many-ancestors --disable=protected-access --disable=too-many-statements --disable=too-many-arguments tests/unit/test_*.py
 
-# test:unit:
-#   extends: .test
-#   stage: test
-#   image: python:3.9-buster
-#   variables:
-#     BRANCH_NAME: "${CI_COMMIT_REF_SLUG}"
-#   before_script:
-#     # - pip install --cache-dir=~/.cache/pip-test -r requirements.txt
-#     # - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
-#     - pip install --cache-dir=~/.cache/pip-test -e .
-#   script:
-#     - pytest --junit-xml=report.xml --cov=src/daemon tests/unit && coveralls
-#   artifacts:
-#     when: always
-#     reports:
-#       junit: report.xml
+test:unit:
+  extends: .test
+  stage: test
+  image: python:3.9-buster
+  variables:
+    BRANCH_NAME: "${CI_COMMIT_REF_SLUG}"
+  before_script:
+    - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
+    - pip install --cache-dir=~/.cache/pip-test -e .
+  script:
+    - pytest --junit-xml=report.xml --cov=src/daemon tests/unit && coveralls
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
