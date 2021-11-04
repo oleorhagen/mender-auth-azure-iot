@@ -12,14 +12,14 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import logging
+import time
+
 import docker
-from docker.types import Mount
+import pytest
 from docker import APIClient
 from docker.models.containers import Container
-import pytest
-import time
-import logging
-
+from docker.types import Mount
 from server import MQTTServer
 
 logger = logging.getLogger(__name__)

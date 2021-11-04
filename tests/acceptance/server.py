@@ -13,13 +13,12 @@
 #    limitations under the License.
 
 
-import random
-import time
-import pytest
 import json
-
+import random
 import re
+import time
 
+import pytest
 from paho.mqtt import client as mqtt_client
 
 

@@ -12,20 +12,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import argparse
+import asyncio
 import logging
 import logging.handlers
-import time
-import random
 import os
-import asyncio
+import random
 import sys
+import time
 
 from azure.iot.device import IoTHubDeviceClient
 
-import daemon.identity as identity
 import daemon.config as config
-from daemon.settings import PATHS as Config
+import daemon.identity as identity
 from daemon.config import NoConfigurationFileError
+from daemon.settings import PATHS as Config
 
 log = logging.getLogger()
 
