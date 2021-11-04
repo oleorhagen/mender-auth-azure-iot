@@ -19,9 +19,9 @@ test:acceptance:
   stage: test
   image: docker:19.03-dind
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-    DOCKER_CLIENT_TIMEOUT: 300
-    COMPOSE_HTTP_TIMEOUT: 300
+    # GIT_SUBMODULE_STRATEGY: recursive
+    # DOCKER_CLIENT_TIMEOUT: 300
+    # COMPOSE_HTTP_TIMEOUT: 300
   tags:
     - mender-qa-slave-highcpu
   before_script:
@@ -29,6 +29,7 @@ test:acceptance:
     - unset DOCKER_TLS_VERIFY
     - unset DOCKER_CERT_PATH
     # Install integration tests framework dependencies
+    - apk add bash git python3 python3-dev py-pip
     - pip3 install -r tests/acceptance/requirements.txt
     # Start dockerd in the background
     - /usr/local/bin/dockerd &
@@ -41,11 +42,11 @@ test:acceptance:
       done
     - docker version # Verify that the docker server is up and running
   script:
-    - py.test tests/acceptance/
+    - py.test --junit-xml=report.xml --cov=src/daemon tests/acceptance/
   artifacts:
     when: always
     reports:
-        junit: tests/acceptance/report.xml
+        junit: report.xml
 
 .test:
   needs: []
