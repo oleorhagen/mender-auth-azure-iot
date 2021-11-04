@@ -26,7 +26,7 @@ class ScriptKeyValueAggregator:
 
     def __init__(self, script_path: str):
         self.script_path = script_path
-        self.vals: Dict[str, List[str]] = {}
+        self.vals: Dict[str, str] = {}
 
     def run(self) -> dict:
         try:
@@ -47,12 +47,12 @@ class ScriptKeyValueAggregator:
             )
             return {}
 
-    def collect(self) -> Dict[str, List[str]]:
+    def collect(self) -> Dict[str, str]:
         with open(self.script_path) as fh:
             data = fh.read()
             return self.parse(data)
 
-    def parse(self, data: str) -> Dict[str, List[str]]:
+    def parse(self, data: str) -> Dict[str, str]:
         for line in data.split("\n"):
             if line == "":
                 continue

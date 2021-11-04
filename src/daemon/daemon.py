@@ -17,7 +17,7 @@ import sys
 import time
 from logging.handlers import SysLogHandler
 
-from azure.iot.device import IoTHubDeviceClient
+from azure.iot.device import IoTHubDeviceClient  # type: ignore
 
 import daemon.config.config as config
 import daemon.scripts.identity as identity
