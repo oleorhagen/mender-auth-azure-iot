@@ -47,10 +47,10 @@ class ScriptKeyValueAggregator:
             )
             return {}
 
-    def collect(self, unique_keys: bool = False) -> Dict[str, List[str]]:
+    def collect(self) -> Dict[str, List[str]]:
         with open(self.script_path) as fh:
             data = fh.read()
-            return self.parse(data, unique_keys)
+            return self.parse(data)
 
     def parse(self, data: str) -> Dict[str, List[str]]:
         for line in data.split("\n"):

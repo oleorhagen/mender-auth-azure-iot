@@ -15,7 +15,7 @@
 import logging
 import os
 
-from daemon.aggregator import ScriptKeyValueAggregator
+from daemon.scripts.aggregator import ScriptKeyValueAggregator
 
 log = logging.getLogger()
 

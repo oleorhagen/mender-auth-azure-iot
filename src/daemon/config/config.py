@@ -35,7 +35,7 @@ class Config:
                 log.debug(f"ConnectionString: {v}")
                 self.ConnectionString = v
             else:
-                log.error(f"The key {k} is not recognized by the Python client")
+                log.error(f"The key {k} is not recognized by the azure auth daemon")
 
 
 def load(local_path: str) -> Optional[Config]:

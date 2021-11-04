@@ -12,20 +12,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import argparse
-import asyncio
 import logging
 import logging.handlers
-import os
-import random
 import sys
 import time
 
 from azure.iot.device import IoTHubDeviceClient
 
-import daemon.config as config
-import daemon.identity as identity
-from daemon.config import NoConfigurationFileError
-from daemon.settings import PATHS as Config
+import daemon.config.config as config
+import daemon.scripts.identity as identity
+from daemon._version import __version__ as package_version
+from daemon.config.config import NoConfigurationFileError
+from daemon.settings.settings import PATHS as Config
 
 log = logging.getLogger()
 
@@ -40,8 +38,12 @@ def send_message(device_client, reported_properties):
 def get_message(device_client):
     twin = device_client.get_twin()
     log.info("Twin document:")
-    log.info("{}".format(twin))
+    log.info(f"{twin}")
     return twin
+
+
+def run_version(_):
+    print(f"version: {package_version}")
 
 
 def run_daemon(args):
@@ -81,7 +83,7 @@ def run_daemon(args):
         desired = twin.get("desired", None)
         if not desired:
             log.error("desired data not present in the response")
-            return
+            return 1
         log.info("Sending twin report...")
         if JWT_TOKEN != desired.get("JWT", ""):
             log.info(
@@ -94,7 +96,7 @@ def run_daemon(args):
                 reported_properties={"device_id": device_identity, "JWT": JWT_TOKEN,},
             )
         if args.stop:
-            return
+            return 1
         log.info(f"Going to sleep for {DEVICE_UPDATE_INTERVAL} seconds...")
         # TODO - reinstate
         # time.sleep(DEVICE_UPDATE_INTERVAL)
