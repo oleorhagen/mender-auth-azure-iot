@@ -12,9 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import json
 import logging as log
-import os
 
 import pytest
 
@@ -31,6 +29,6 @@ class TestFileNotFound:
             config.load("")
         assert "Configuration file: '' not found" in caplog.text
 
-    def test_correct_configuration_file(self, caplog):
+    def test_correct_configuration_file(self):
         conf = config.load("tests/unit/testdata/azure.json")
         assert conf.ConnectionString == "foobarbaz"

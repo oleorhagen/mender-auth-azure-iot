@@ -60,7 +60,7 @@ class TestIdentityAggregator:
         assert identity_data
         assert identity_data == expected
 
-    def test_no_identity(self):
+    def test_no_identity(self, caplot):
         identity_data = identity.aggregate(path="/i/do/not/exist")
         assert not identity_data
         assert "No identity can be collected" in caplog.text
