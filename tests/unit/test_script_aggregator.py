@@ -18,9 +18,7 @@ import stat
 
 import pytest
 
-import daemon.scripts.aggregator as aggregator
-import daemon.scripts.identity as identity
-
+from daemon.scripts import identity
 
 class TestIdentityAggregator:
     @pytest.fixture(autouse=True)
@@ -62,7 +60,7 @@ class TestIdentityAggregator:
         assert identity_data
         assert identity_data == expected
 
-    def test_no_identity(self, caplog):
+    def test_no_identity(self):
         identity_data = identity.aggregate(path="/i/do/not/exist")
         assert not identity_data
         assert "No identity can be collected" in caplog.text
