@@ -52,7 +52,7 @@ class ScriptKeyValueAggregator:
             data = fh.read()
             return self.parse(data, unique_keys)
 
-    def parse(self, data: str, unique_keys: bool = False) -> Dict[str, List[str]]:
+    def parse(self, data: str) -> Dict[str, List[str]]:
         for line in data.split("\n"):
             if line == "":
                 continue
@@ -61,8 +61,5 @@ class ScriptKeyValueAggregator:
                 log.debug("Skipping line without output")
                 continue
             key, val = arr[0], arr[1]
-            if unique_keys:
-                self.vals[key] = [val]
-            else:
-                self.vals.setdefault(key, []).append(val)
+            self.vals[key] = val
         return self.vals

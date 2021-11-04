@@ -28,17 +28,16 @@ class MQTTServer:
     broker = "localhost"
     port = 1883
 
-    client_workers = []
-
-    received_twins = []
-
     def __init__(self):
-        pass
+        self.status = "unknown"
+        self.client_workers = []
+        self.received_twins = []
 
     def connect(self):
         def on_connect(client, userdata, flags, rc):
             if rc == 0:
                 print("Connected to MQTT Broker!")
+                self.status = "healthy"
             else:
                 print("Failed to connect, return code %d\n", rc)
 
@@ -52,6 +51,9 @@ class MQTTServer:
     def expected(self, uploads, replies):
         self.uploads = uploads
         self.replies = replies
+
+    def healthy(self):
+        return self.status == "healthy"
 
     def reply_to_twin_patch(self):
         """1. A device must first subscribe to the $iothub/twin/res/# topic to receive
@@ -126,7 +128,9 @@ class MQTTServer:
 
     def teardown(self):
         for worker in self.client_workers:
-            worker.on_disconnect = lambda a,b,c: print(f"Disconnected worker {worker} from the broker")
+            worker.on_disconnect = lambda a, b, c: print(
+                f"Disconnected worker {worker} from the broker"
+            )
             worker.disconnect()
 
 

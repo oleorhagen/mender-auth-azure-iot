@@ -14,8 +14,10 @@
 
 import pytest
 import threading
+import time
 
 from daemon import daemon
+from daemon.settings import  PATHS as Config
 
 
 def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
@@ -24,33 +26,25 @@ def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
         uploads={"device_id": {"foo": ["bar"]}},
         replies={"desired": {"JWT": "FOOBARBAZ"}, "reported": {},},
     )
-    import time
 
-    # TODO - Should possibly be replaced with a healthcheck
-    time.sleep(3)
-    server.spin()
-    # TODO - Same for the server
-    time.sleep(3)
+    Config.conf_file = "tests/acceptance/testdata/azure.json"
+    Config.server_cert = "tests/acceptance/broker/server.crt"
+    Config.identity_scripts = "tests/acceptance/testdata/identity_script"
 
-    class Stop:
-        def __init__(self):
-            self.stop = False
+    class Args:
+        stop = False
 
-        def now(self):
-            self.stop = True
-
-    stop  = Stop()
-
-    # Quick for tests
+    args = Args()
     daemon.DEVICE_UPDATE_INTERVAL = 5
-    threading.Thread(target=daemon.run_daemon, args=(stop,), daemon=True).start()
+    threading.Thread(target=daemon.run_daemon, args=(args,), daemon=True).start()
     time.sleep(10)
     assert len(server.received_twins) >= 1
     assert server.received_twins[0] == {
-        "device_id": {"foo": ["bar"]},
+        "device_id": {"foo": "bar"},
+        "JWT": "FOOBARBAZ",
     }
     assert daemon.JWT_TOKEN == "FOOBARBAZ"
 
-    stop.now()
+    args.stop = True
     time.sleep(10)
     server.teardown()

@@ -14,6 +14,8 @@
 
 import docker
 from docker.types import Mount
+from docker import APIClient
+from docker.models.containers import Container
 import pytest
 import time
 import logging
@@ -22,6 +24,12 @@ from server import MQTTServer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
+
+
+def get_health(container: Container):
+    api_client = APIClient()
+    inspect_results = api_client.inspect_container(container.name)
+    return inspect_results["State"]["Health"]["Status"]
 
 
 @pytest.fixture
@@ -43,7 +51,17 @@ def spinup_mqtt_broker():
             ),
         ],
         detach=True,
+        healthcheck={
+            "Test": ["CMD", "mosquitto_sub", "-t", "$SYS/#", "-C", "1"],
+            "Interval": 1000000 * 500,  # 500 ms
+            "Timeout": 1000000 * 5 * 1000,  # 5 seconds
+            "Retries": 3,
+            "StartPeriod": 1000000 * 5 * 1000,  # 5 seconds
+        },
     )
+    while not get_health(mqtt_broker) == "healthy":
+        print("Waiting for the container to become healty...")
+        time.sleep(3)
     yield mqtt_broker
     # TODO - run as a teardown method
     mqtt_broker.stop()
@@ -52,4 +70,8 @@ def spinup_mqtt_broker():
 @pytest.fixture
 def spinup_mqtt_iot_hub_mock_server():
     server = MQTTServer()
+    server.spin()
+    while not server.healthy():
+        print("Waiting for the server to become healthy...")
+        time.sleep(3)
     return server

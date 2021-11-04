@@ -24,39 +24,54 @@ from azure.iot.device import IoTHubDeviceClient
 
 import daemon.identity as identity
 import daemon.config as config
+from daemon.settings import PATHS as Config
+from daemon.config import NoConfigurationFileError
 
 log = logging.getLogger()
 
-DEVICE_UPDATE_INTERVAL = 60*60
+DEVICE_UPDATE_INTERVAL = 60 * 60
 JWT_TOKEN = ""
 
 
-def send_message(device_client, device_identity):
-    # send new reported properties
-    reported_properties = {
-        "device_id": device_identity,
-    }
+def send_message(device_client, reported_properties):
     device_client.patch_twin_reported_properties(reported_properties)
 
 
 def get_message(device_client):
-    # get the twin
     twin = device_client.get_twin()
     log.info("Twin document:")
     log.info("{}".format(twin))
     return twin
 
 
-def run_daemon(stop):
+def run_daemon(args):
     global JWT_TOKEN
-    connection_string = config.load("azure.json").ConnectionString
-    ca_cert = "tests/acceptance/broker/server.crt"
-    certfile = open(ca_cert)
-    root_ca_cert = certfile.read()
-    device_client = IoTHubDeviceClient.create_from_connection_string(
-        connection_string, server_verification_cert=root_ca_cert
-    )
-    device_identity = identity.aggregate("/home/olepor/testaggregation")
+    try:
+        connection_string = config.load(Config.conf_file).ConnectionString
+    except NoConfigurationFileError as e:
+        log.error(e)
+        return 1
+    if Config.server_cert != "":
+        server_cert = Config.server_cert
+        try:
+            certfile = open(server_cert)
+        except FileNotFoundError as e:
+            log.error(e)
+            return 1
+        server_cert_raw = certfile.read()
+        device_client = IoTHubDeviceClient.create_from_connection_string(
+            connection_string, server_verification_cert=server_cert_raw
+        )
+    else:
+        device_client = IoTHubDeviceClient.create_from_connection_string(
+            connection_string, server_verification_cert=""
+        )
+    try:
+        open(Config.identity_scripts)
+    except FileNotFoundError as e:
+        log.error(e)
+        return 1
+    device_identity = identity.aggregate(Config.identity_scripts)
     log.info(f"Device ID: {device_identity}")
     device_client.connect()
     log.info("Connected to the IoT Hub")
@@ -67,13 +82,23 @@ def run_daemon(stop):
         if not desired:
             log.error("desired data not present in the response")
             return
-        JWT_TOKEN = desired.get("JWT", "")
         log.info("Sending twin report...")
-        if twin.get("device_id", "") != device_identity:
-            send_message(device_client, device_identity)
-        if stop.stop:
+        if JWT_TOKEN != desired.get("JWT", ""):
+            log.info(
+                "The JWT Token, or the device identity has changed in the desired vs reported state"
+            )
+            log.info("Resending")
+            JWT_TOKEN = desired.get("JWT", "")
+            send_message(
+                device_client,
+                reported_properties={"device_id": device_identity, "JWT": JWT_TOKEN,},
+            )
+        if args.stop:
             return
-        time.sleep(DEVICE_UPDATE_INTERVAL)
+        log.info(f"Going to sleep for {DEVICE_UPDATE_INTERVAL} seconds...")
+        # TODO - reinstate
+        # time.sleep(DEVICE_UPDATE_INTERVAL)
+        time.sleep(7)
 
 
 def setup_logging(args):
@@ -141,6 +166,7 @@ def main(testargs=None):
         "--version", "-v", help="print the version", default=False, action="store_true"
     )
     args = parser.parse_args(testargs)
+    args.stop = False
     setup_logging(args)
     if args.version:
         run_version(args)
