@@ -13,7 +13,7 @@
 #    limitations under the License.
 import logging
 import subprocess
-from typing import Dict, List
+from typing import Dict
 
 log = logging.getLogger(__name__)
 
