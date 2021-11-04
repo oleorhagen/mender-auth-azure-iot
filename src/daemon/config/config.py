@@ -13,7 +13,6 @@
 #    limitations under the License.
 import json
 import logging
-from typing import Optional
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class Config:
                 log.error(f"The key {k} is not recognized by the azure auth daemon")
 
 
-def load(local_path: str) -> Optional[Config]:
+def load(local_path: str):
     """Read and return the merged configuration from the config file"""
     log.info("Loading the configuration file...")
     log.debug(f"From path: {local_path}")
@@ -46,7 +45,7 @@ def load(local_path: str) -> Optional[Config]:
     try:
         with open(local_path, "r") as fh:
             local_conf = json.load(fh)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         log.info(f"Configuration file: '{local_path}' not found")
-        raise NoConfigurationFileError
+        raise NoConfigurationFileError from e
     return Config(local_conf=local_conf or {})

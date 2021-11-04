@@ -44,7 +44,6 @@ def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
         "device_id": {"foo": "bar"},
         "JWT": "FOOBARBAZ",
     }
-    assert daemon.JWT_TOKEN == "FOOBARBAZ"
 
     args.stop = True
     time.sleep(10)
