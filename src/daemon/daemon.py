@@ -13,9 +13,9 @@
 #    limitations under the License.
 import argparse
 import logging
-import logging.handlers
 import sys
 import time
+from logging.handlers import SysLogHandler
 
 from azure.iot.device import IoTHubDeviceClient
 
@@ -28,7 +28,6 @@ from daemon.settings.settings import PATHS as Config
 log = logging.getLogger()
 
 DEVICE_UPDATE_INTERVAL = 60 * 60
-JWT_TOKEN = ""
 
 
 def send_message(device_client, reported_properties):
@@ -47,7 +46,7 @@ def run_version(_):
 
 
 def run_daemon(args):
-    global JWT_TOKEN
+    jwt_token = ""
     try:
         connection_string = config.load(Config.conf_file).ConnectionString
     except NoConfigurationFileError as e:
@@ -85,22 +84,20 @@ def run_daemon(args):
             log.error("desired data not present in the response")
             return 1
         log.info("Sending twin report...")
-        if JWT_TOKEN != desired.get("JWT", ""):
+        if jwt_token != desired.get("JWT", ""):
             log.info(
                 "The JWT Token, or the device identity has changed in the desired vs reported state"
             )
             log.info("Resending")
-            JWT_TOKEN = desired.get("JWT", "")
+            jwt_token = desired.get("JWT", "")
             send_message(
                 device_client,
-                reported_properties={"device_id": device_identity, "JWT": JWT_TOKEN,},
+                reported_properties={"device_id": device_identity, "JWT": jwt_token,},
             )
         if args.stop:
             return 1
         log.info(f"Going to sleep for {DEVICE_UPDATE_INTERVAL} seconds...")
-        # TODO - reinstate
-        # time.sleep(DEVICE_UPDATE_INTERVAL)
-        time.sleep(7)
+        time.sleep(DEVICE_UPDATE_INTERVAL)
 
 
 def setup_logging(args):
@@ -120,9 +117,7 @@ def setup_logging(args):
         "error": logging.ERROR,
         "critical": logging.CRITICAL,
     }.get(args.log_level, logging.INFO)
-    syslogger = (
-        logging.NullHandler() if args.no_syslog else logging.handlers.SysLogHandler()
-    )
+    syslogger = logging.NullHandler() if args.no_syslog else SysLogHandler()
     handlers.append(syslogger)
     if args.log_file:
         handlers.append(logging.FileHandler(args.log_file))

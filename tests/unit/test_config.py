@@ -17,6 +17,7 @@ import logging as log
 import os
 
 import pytest
+
 from daemon.config import config
 
 
