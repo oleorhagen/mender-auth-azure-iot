@@ -47,6 +47,6 @@ def load(local_path: str) -> Optional[Config]:
         with open(local_path, "r") as fh:
             local_conf = json.load(fh)
     except FileNotFoundError:
-        log.info(f"Global configuration file: '{local_path}' not found")
+        log.info(f"Configuration file: '{local_path}' not found")
         raise NoConfigurationFileError
     return Config(local_conf=local_conf or {})
