@@ -20,6 +20,7 @@ import pytest
 
 from daemon.scripts import identity
 
+
 class TestIdentityAggregator:
     @pytest.fixture(autouse=True)
     def set_log_level(self, caplog):

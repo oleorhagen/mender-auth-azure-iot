@@ -19,10 +19,10 @@ from logging.handlers import SysLogHandler
 
 from azure.iot.device import IoTHubDeviceClient  # type: ignore
 
-from daemon.config import config
-from daemon.scripts import identity
 from daemon._version import __version__ as package_version
+from daemon.config import config
 from daemon.config.config import NoConfigurationFileError
+from daemon.scripts import identity
 from daemon.settings.settings import PATHS as Config
 
 log = logging.getLogger()

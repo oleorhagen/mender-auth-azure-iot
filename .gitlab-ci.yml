@@ -74,8 +74,7 @@ test:static:
   before_script:
     - pip install --cache-dir=~/.cache/pip-test -r requirements_static_tools.txt
     - pip install --cache-dir=~/.cache/pip-test .
-    # - pip install --cache-dir=~/.cache/pip-test -r requirements.txt
-    # - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
+    - pip install --cache-dir=~/.cache/pip-test -r tests/unit/requirements.txt
   script:
     - isort --check-only --line-length 88 --wrap-length 88 src
     - isort --check-only --line-length 88 --wrap-length 88 tests/unit/test_*.py
