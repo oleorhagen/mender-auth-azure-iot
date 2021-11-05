@@ -40,12 +40,12 @@ def spinup_mqtt_broker():
         ports={1883: 1883, 8883: 8883,},
         mounts=[
             Mount(
-                source="/home/olepor/mendersoftware/mender-auth-azure-iot/tests/acceptance/testdata",
+                source="${CI_PROJECT_DIR}/mender-auth-azure-iot/tests/acceptance/testdata",
                 target="/mosquitto/config/",
                 type="bind",
             ),
             Mount(
-                source="/home/olepor/mendersoftware/mender-auth-azure-iot/tests/acceptance/broker/",
+                source="${CI_PROJECT_DIR}/mender-auth-azure-iot/tests/acceptance/broker/",
                 target="/etc/ssl/certs/broker/",
                 type="bind",
             ),
