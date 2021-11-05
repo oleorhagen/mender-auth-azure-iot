@@ -19,7 +19,6 @@ test:acceptance:
   stage: test
   image: docker:19.03-dind
   variables:
-    # GIT_SUBMODULE_STRATEGY: recursive
     # DOCKER_CLIENT_TIMEOUT: 300
     # COMPOSE_HTTP_TIMEOUT: 300
   tags:
@@ -42,7 +41,7 @@ test:acceptance:
       done
     - docker version # Verify that the docker server is up and running
   script:
-    - py.test --junit-xml=report.xml --cov=src/daemon tests/acceptance/
+    - pytest --junit-xml=report.xml --cov=src/daemon tests/acceptance/ && coveralls
   artifacts:
     when: always
     reports:
@@ -54,18 +53,6 @@ test:acceptance:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
         - ~/.cache/pip-test/
-
-# test:runtime:
-#   extends: .test
-#   stage: test
-#   image: python:3.9-buster
-#   before_script:
-#     - mkdir -p /var/lib/mender/inventory
-#     - mkdir -p /etc/mender
-#     - cp support/* /var/lib/mender/inventory/
-#     - pip install --cache-dir=~/.cache/pip-test/ .
-#   script:
-#     - mender-python-client bootstrap
 
 test:static:
   extends: .test
