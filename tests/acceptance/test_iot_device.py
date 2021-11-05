@@ -18,7 +18,7 @@ import time
 import pytest
 
 from daemon import daemon
-from daemon.settings import PATHS as Config
+from daemon.settings.settings import PATHS as Config
 
 
 def test_daemon(spinup_mqtt_broker, spinup_mqtt_iot_hub_mock_server):
