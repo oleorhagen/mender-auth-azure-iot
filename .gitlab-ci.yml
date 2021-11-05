@@ -30,6 +30,7 @@ test:acceptance:
     # Install integration tests framework dependencies
     - apk add bash git python3 python3-dev py-pip
     - pip3 install -r tests/acceptance/requirements.txt
+    - pip3 install -e .
     # Start dockerd in the background
     - /usr/local/bin/dockerd &
     # Wait for dockerd to start
